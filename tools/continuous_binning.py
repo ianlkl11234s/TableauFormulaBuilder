@@ -1,5 +1,5 @@
 import streamlit as st
-from openai import OpenAI, RateLimitError, AuthenticationError # 引入特定錯誤類型
+from .llm_services import LLMClientInterface # 引入通用介面
 
 def validate_group_logic(logic_str):
     """驗證分組邏輯的格式"""
@@ -39,9 +39,10 @@ def generate_prompt(field_name, group_logic, display_unit):
     9. 僅需要回傳最終的 Tableau CASE WHEN 計算式程式碼區塊，請勿包含任何其他的解釋或說明文字。
     """
 
-def show(client: OpenAI):
+def show(llm_client: LLMClientInterface, model_name: str):
     """顯示連續值分組工具的介面和邏輯"""
-    st.markdown("### 設定分組條件")
+    st.markdown("##### 設定分組條件")
+    st.write("這個可以用來將欄位進行分組，尤其是像是客單價或是營收")
 
     # 使用 columns 來優化版面配置
     col1, col2 = st.columns(2)
@@ -75,16 +76,16 @@ def show(client: OpenAI):
     st.markdown("---")
 
     if st.button("🚀 產生 Tableau 計算式", type="primary"):
-        with st.spinner("🧠 AI 正在思考中..."):
+        with st.spinner(f"🧠 使用 {model_name} 思考中..."):
             try:
                 prompt = generate_prompt(field_name, group_logic_input, display_unit)
 
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini", # 或其他適合的模型
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.2 # 稍微降低 temperature 讓格式更穩定
+                # 使用傳入的 client 和 model_name 呼叫通用方法
+                formula = llm_client.generate_text(
+                    prompt=prompt,
+                    model=model_name,
+                    temperature=0.2
                 )
-                formula = response.choices[0].message.content.strip()
 
                 # 嘗試移除 Markdown 的程式碼區塊標記
                 formula = formula.replace("```tableau", "").replace("```sql", "").replace("```", "").strip()
@@ -98,10 +99,14 @@ def show(client: OpenAI):
                 # copy_button(formula, "📋 複製計算式")
                 # 備註：原生的 clipboard 可能在 Streamlit Cloud 有限制，建議用套件
 
-            except AuthenticationError:
-                st.error("OpenAI API 驗證失敗！請確認您的 API Key 是否正確且有效。")
-            except RateLimitError:
-                st.error("已達到 OpenAI API 使用限制，請稍後再試。")
-            except Exception as e:
+            except ConnectionError as e: # Client 未初始化
+                st.error(f"LLM 客戶端連線錯誤: {e}")
+            except ConnectionAbortedError as e: # OpenAI Key 錯誤
+                st.error(f"API 金鑰驗證失敗: {e}")
+            except ConnectionRefusedError as e: # Rate Limit
+                st.error(f"API 速率限制: {e}")
+            except RuntimeError as e: # API 返回錯誤或未知錯誤
+                st.error(f"LLM API 呼叫失敗: {e}")
+            except Exception as e: # 其他未知錯誤
                 st.error(f"生成計算式時發生預期外的錯誤：{str(e)}")
                 st.exception(e) # 顯示詳細錯誤 traceback
