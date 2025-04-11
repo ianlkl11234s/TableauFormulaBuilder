@@ -1,0 +1,73 @@
+# Python 相關
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虛擬環境
+venv/
+ENV/
+env/
+.env
+
+# IDE 相關
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Streamlit 相關
+.streamlit/secrets.toml
+.streamlit/config.toml
+
+# LLM 相關
+api_keys.json
+*.key
+credentials.json
+token.json
+
+# 日誌檔案
+*.log
+logs/
+log/
+
+# 快取檔案
+.cache/
+cache/
+*.cache
+
+# 資料檔案
+data/
+*.csv
+*.xlsx
+*.json
+*.db
+*.sqlite
+
+# 其他
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
