@@ -1,2 +1,5 @@
-streamlit==1.20.0
-openai==0.27.0
+streamlit
+python-dotenv
+openai
+google-generativeai
+anthropic
