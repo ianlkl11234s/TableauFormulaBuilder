@@ -4,7 +4,7 @@ import os
 
 # 載入 LLM 服務和工具模組
 from tools.llm_services import get_llm_client, AVAILABLE_MODELS, LLMClientInterface
-from tools import continuous_binning, boolean_tagging, order_combination
+from tools import continuous_binning, boolean_tagging, order_combination, date_range
 
 # 載入環境變數
 load_dotenv()
@@ -66,6 +66,10 @@ TOOLS_CONFIG = {
     "訂單組合標記": {
         "function": order_combination.show,
         "requires_llm": True
+    },
+    "特定日期區間選擇": {
+        "function": date_range.show,
+        "requires_llm": False
     }
 }
 
