@@ -6,15 +6,11 @@ def validate_group_logic(logic_str):
     try:
         values = [x.strip() for x in logic_str.split(",")]
         if not values: return False, "輸入不可為空"
-        if values[0].lower() != "null": return False, "第一個值必須是 null"
-        if len(values) < 2 or values[1].lower() != "<0": return False, "第二個值必須是 <0"
 
         prev = -float('inf') # 允許第一個數字是 0 或負數
         for v in values[2:]:
             try:
                 current = float(v)
-                # 允許等於，因為可能會有 0, 0 的情況 (雖然 Tableau 通常不這樣用)
-                # 但嚴格遞增比較常見，所以還是維持 current <= prev
                 if current <= prev:
                     return False, f"數值必須依序嚴格遞增 (錯誤發生在: {prev} -> {current})"
                 prev = current
@@ -24,19 +20,61 @@ def validate_group_logic(logic_str):
     except Exception as e:
         return False, f"解析錯誤: {str(e)}"
 
-def generate_prompt(field_name, group_logic, display_unit):
+def generate_prompt(field_name, group_logic, display_unit, has_null):
     """產生 OpenAI 的提示"""
     return f"""
-    你是一個可以產生 Tableau 計算式的助理。請根據以下需求，產生CASE WHEN的計算欄位邏輯：
-    1. 欄位名稱：{field_name}
-    2. 分組邏輯（依序）：{group_logic}
-    3. 若值為 null，顯示「無購買」（前綴序號為 1.）
-    4. 若數值 <0，顯示 "< 0" （前綴序號為 2.）
-    5. 之後依照順序處理區間（如 0 ~ 0、1 ~ 6、7 ~ 13 ...），使用 "<= 上限" 標記。第一個數值區間從 0 開始。
-    6. 最後一組為 ">= [最後一個數值]" 格式。
-    7. 每個分組顯示格式時，請加上前綴序號，並盡可能加上單位，如 "1. 無購買"、"2. < 0 {display_unit}"、"3. = 0 {display_unit}"、"4. 1 ~ 6 {display_unit}"...
-    8. 單位：{display_unit}（若為空則省略單位）
-    9. 僅需要回傳最終的 Tableau CASE WHEN 計算式程式碼區塊，請勿包含任何其他的解釋或說明文字。
+        欄位名稱：
+            {field_name}
+
+            分組級距（依序）：
+            {group_logic}
+
+            值是否可能有 NULL 值：
+            {'本欄位有 NULL 值，請記得要補上 IFNULL 的處理' if has_null else '本欄位無 NULL 值，不用特別考慮。'}
+
+
+            顯示單位（可空白）：
+            {display_unit}
+
+            顯示格式需求：
+            - 每個分組前請加上序號（例如 "1. ...", "2. ..."）({ '有 NULL，但 NULL 不要加序號，且請命名為無＿＿資料'if has_null else '' })
+            - 分組區間請使用「起始 ~ 結束」的格式顯示（例：151 ~ 300）
+            - 起始值請自動從上一個分組上限 +1 推算（第一組為最小值或特殊值）
+            - 若有 <0、=0 等特殊條件，請獨立列出
+            - 最後一組請使用「≥ 最大值」格式
+
+        產出內容格式：
+
+            - 請產生完整的 Tableau IF-ELSEIF 計算式
+            - 每個條件請對應一段明確的區間說明與文字標籤
+            - 若單位存在，請加在區間描述最後（例：400 ~ 600 元）
+            - 若使用者未提供單位，則只顯示數字區間
+            - 請在 ELSE 區段補上「其他」的處理（例如 '其他' 或 '未分類'）
+
+        範例說明（請根據實際 breakpoints 判斷，不可照抄）：
+
+            欄位：[客單價]
+            分組：150, 300, 500, 1000, 2000
+            顯示單位：元
+
+            結果：
+            ------
+            IF [客單價] <= 150 THEN
+                "1. ≤ 150 元"
+            ELSEIF [客單價] <= 300 THEN
+                "2. 151 ~ 300 元"
+            ELSEIF [客單價] <= 500 THEN
+                "3. 301 ~ 500 元"
+            ELSEIF [客單價] <= 1000 THEN
+                "4. 501 ~ 1000 元"
+            ELSEIF [客單價] <= 2000 THEN
+                "5. 1001 ~ 2000 元"
+            ELSE
+                "6. ≥ 2001 元"
+            END
+            ------
+
+        請直接根據我提供的欄位與級距資料，產出上述格式的計算欄位語法。不需要額外說明，不要額外補充任何解釋。
     """
 
 def show(llm_client: LLMClientInterface, model_name: str):
@@ -67,6 +105,13 @@ def show(llm_client: LLMClientInterface, model_name: str):
         help="請依序輸入分組的邊界值，用逗號分隔。格式：`null, <0, 數字1, 數字2, ...`。例如 `null, <0, 0, 6, 13, 29` 表示 `null`, `<0`, `=0`, `1-6`, `7-13`, `>=14`"
     )
 
+    # 值是否可能有 NULL 值
+    has_null = st.checkbox(
+        "值有 NULL 值",
+        value=True,
+        help="勾選此選項會考慮 NULL 值的情況"
+    )
+
     # 驗證輸入
     is_valid, error_message = validate_group_logic(group_logic_input)
     if not is_valid:
@@ -75,10 +120,10 @@ def show(llm_client: LLMClientInterface, model_name: str):
 
     st.markdown("---")
 
-    if st.button("🚀 產生 Tableau 計算式", type="primary"):
+    if st.button("🚀 產生 分組計算式", type="primary"):
         with st.spinner(f"🧠 使用 {model_name} 思考中..."):
             try:
-                prompt = generate_prompt(field_name, group_logic_input, display_unit)
+                prompt = generate_prompt(field_name, group_logic_input, display_unit, has_null)
 
                 # 使用傳入的 client 和 model_name 呼叫通用方法
                 formula = llm_client.generate_text(
@@ -91,13 +136,8 @@ def show(llm_client: LLMClientInterface, model_name: str):
                 formula = formula.replace("```tableau", "").replace("```sql", "").replace("```", "").strip()
 
                 st.success("✨ 計算式已生成！")
-                st.code(formula, language="sql") # Tableau 語法高亮通常用 sql
+                st.code(formula, language="sql") # Tableau 語法通常用 sql
 
-                # 複製按鈕 (使用 streamlit-copy-button)
-                # 需要先安裝 pip install streamlit-copy-button
-                # from streamlit_copy_button import copy_button
-                # copy_button(formula, "📋 複製計算式")
-                # 備註：原生的 clipboard 可能在 Streamlit Cloud 有限制，建議用套件
 
             except ConnectionError as e: # Client 未初始化
                 st.error(f"LLM 客戶端連線錯誤: {e}")

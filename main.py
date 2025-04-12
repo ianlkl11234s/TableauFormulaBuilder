@@ -4,7 +4,7 @@ import os
 
 # 載入 LLM 服務和工具模組
 from tools.llm_services import get_llm_client, AVAILABLE_MODELS, LLMClientInterface
-from tools import continuous_binning, boolean_tagging
+from tools import continuous_binning, boolean_tagging, order_combination
 
 # 載入環境變數
 load_dotenv()
@@ -52,24 +52,35 @@ st.sidebar.markdown("---") # 分隔線
 
 # --- 工具選擇 ---
 st.sidebar.header("選擇工具")
-tool_options = {
-    "連續值分組": continuous_binning.show,
-    "是否標籤": boolean_tagging.show,
-    # 未來可以繼續增加工具...
+
+# 定義工具及其是否需要 LLM
+TOOLS_CONFIG = {
+    "連續值分組": {
+        "function": continuous_binning.show,
+        "requires_llm": True
+    },
+    "是否標籤": {
+        "function": boolean_tagging.show,
+        "requires_llm": False
+    },
+    "訂單組合標記": {
+        "function": order_combination.show,
+        "requires_llm": True
+    }
 }
-selected_tool_name = st.sidebar.radio("選擇工具：", list(tool_options.keys()))
+
+selected_tool_name = st.sidebar.radio("選擇工具：", list(TOOLS_CONFIG.keys()))
 
 # --- 主畫面 ---
-st.markdown(f"#### 工具： {selected_tool_name}")
+st.title(f"📊 {selected_tool_name}")
 
-# 執行選擇的工具函數
-selected_tool_func = tool_options[selected_tool_name]
+# 獲取選擇的工具配置
+tool_config = TOOLS_CONFIG[selected_tool_name]
+selected_tool_func = tool_config["function"]
+requires_llm = tool_config["requires_llm"]
 
-# 判斷工具是否需要 LLM client
-# (可以在工具模組中定義一個屬性或函數來標示，或在這裡硬編碼判斷)
-tool_requires_llm = (selected_tool_name == "連續值分組") # 假設目前只有它需要
-
-if tool_requires_llm:
+# 根據工具需求執行對應的函數
+if requires_llm:
     if llm_client and selected_model:
         # 將通用的 client 和選定的 model 傳遞給工具
         selected_tool_func(llm_client, selected_model)
@@ -77,9 +88,8 @@ if tool_requires_llm:
          st.error("請先在側邊欄設定有效的 LLM 提供者及 API Key。")
     elif not llm_client:
         st.error(f"無法載入 {selected_provider} 的 LLM 服務，請檢查側邊欄錯誤訊息。")
-    else: # llm_client 有，但 selected_model 沒有 (理論上不太會發生)
+    else: # llm_client 有，但 selected_model 沒有
         st.error("請在側邊欄選擇一個模型。")
 else:
-    # 對於不需要 LLM 的工具
+    # 對於不需要 LLM 的工具，直接調用
     selected_tool_func()
-
