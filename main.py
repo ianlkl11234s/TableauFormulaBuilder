@@ -4,7 +4,7 @@ import os
 
 # 載入 LLM 服務和工具模組
 from tools.llm_services import get_llm_client, AVAILABLE_MODELS, LLMClientInterface
-from tools import continuous_binning, boolean_tagging, order_combination, date_range
+from tools import continuous_binning, boolean_tagging, order_combination, date_range, existence_check
 
 # 載入環境變數
 load_dotenv()
@@ -13,7 +13,6 @@ load_dotenv()
 st.sidebar.title("🛠️ Tableau 小工具箱")
 
 # --- LLM 設定 ---
-st.sidebar.header("LLM 設定")
 # 過濾掉沒有設定 API Key 的提供者
 available_providers = []
 if os.getenv("OPENAI_API_KEY"): available_providers.append("OpenAI")
@@ -51,7 +50,6 @@ else:
 st.sidebar.markdown("---") # 分隔線
 
 # --- 工具選擇 ---
-st.sidebar.header("選擇工具")
 
 # 定義工具及其是否需要 LLM
 TOOLS_CONFIG = {
@@ -69,6 +67,10 @@ TOOLS_CONFIG = {
     },
     "特定日期區間選擇": {
         "function": date_range.show,
+        "requires_llm": False
+    },
+    "有無判斷": {
+        "function": existence_check.show,
         "requires_llm": False
     }
 }
