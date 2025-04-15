@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 import os
 
 # 載入 LLM 服務和工具模組
-from tools.llm_services import get_llm_client, AVAILABLE_MODELS, LLMClientInterface
-from tools import continuous_binning, boolean_tagging, order_combination, date_range, existence_check
+from tools_tableau.llm_services import get_llm_client, AVAILABLE_MODELS, LLMClientInterface
+from tools_tableau import continuous_binning, boolean_tagging, order_combination, date_range, existence_check
 
 # 載入環境變數
 load_dotenv()
