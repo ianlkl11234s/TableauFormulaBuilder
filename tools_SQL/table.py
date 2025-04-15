@@ -13,7 +13,7 @@ SELECT
     field,
     count(*) AS total_count,
     COUNT(DISTINCT id) AS distinct_count
-FROM 
+FROM stg_salesforce__lead_history
 GROUP BY 1
 """
 
