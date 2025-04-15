@@ -164,7 +164,7 @@ def get_llm_client(provider: str) -> LLMClientInterface | None:
 
 # --- 可用的模型列表 (可以根據需要擴充) ---
 AVAILABLE_MODELS = {
-    "openai": ["gpt-4o-mini"],
+    "openai": ["gpt-4o-mini","gpt-4.1","gpt-4.1-mini"],
     "gemini": ["gemini-2.0-flash"],
     "claude": ["claude-3-5-haiku-20241022"]
 }
