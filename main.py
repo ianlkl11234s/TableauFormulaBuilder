@@ -5,6 +5,7 @@ import os
 # 載入 LLM 服務和工具模組
 from tools_tableau.llm_services import get_llm_client, AVAILABLE_MODELS, LLMClientInterface
 from tools_tableau import continuous_binning, boolean_tagging, order_combination, date_range, existence_check
+from tools_SQL import table_discover
 
 # 載入環境變數
 load_dotenv()
@@ -72,6 +73,10 @@ TOOLS_CONFIG = {
     "有無判斷": {
         "function": existence_check.show,
         "requires_llm": False
+    },
+    "資料表探索 (SQL)": { # 新增 SQL 工具
+        "function": table_discover.show,
+        "requires_llm": True # 因為需要翻譯和關聯建議
     }
 }
 

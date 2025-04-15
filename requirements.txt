@@ -3,3 +3,12 @@ python-dotenv
 openai
 google-generativeai
 anthropic
+pandas
+numpy # 新增，用於 histogram
+# --- 資料庫連接器 (根據需要安裝) ---
+psycopg2-binary # for PostgreSQL
+redshift_connector # for Redshift
+mysql-connector-python # for MySQL
+# --- Google Sheets ---
+gspread
+oauth2client
