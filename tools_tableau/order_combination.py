@@ -18,9 +18,9 @@ def generate_prompt(field_names, handle_null=True, prefix="", suffix="", has_neg
     需求與判斷邏輯說明：
     1. 使用 IF ELSE ELSEIF 產生一個計算欄位，判斷不同欄位組合的情況
     2. {'本欄位只判斷是否有值，也就是 ISNULL / NOT ISNULL 的判斷方式，不會出現數字比較' if is_value else '本欄位只有正數，因此只要判斷是否大於等於零就好'}
-    3. {'本欄位有 NULL 值，請記得要處理 NULL 的狀態' if handle_null else '本欄位無 NULL 值，不用特別考慮。'}
-    4. {'本欄位有負值，請記得要處理負值的狀態，要出現「>0」、「<0」、「=0」的條件判斷' if has_negative else '本欄位無負值，不用特別考慮。'}
-    5. {'本欄位只會出現 Y 和 N，Y 代表有，N 代表無，要出現「Y」、「N」的條件判斷' if is_yn else '本欄位只會出現數字，不用特別考慮。'}
+    3. {'本欄位有 NULL 值，因此「>0」,（沒有該標籤的值，有可能是「=0」也有可能是 NULL)' if handle_null else '本欄位無 NULL 值，只需要「>0」,「=0」來組合即可。'}
+    4. {'本欄位有負值，請記得要處理負值的狀態，要出現「>0」、「<0」、「=0」的條件判斷' if has_negative else ''}
+    5. {'本欄位只會出現 Y 和 N，Y 代表有，N 代表無，要出現「Y」、「N」的條件判斷' if is_yn else ''}
 
 
     結果標籤格式：
