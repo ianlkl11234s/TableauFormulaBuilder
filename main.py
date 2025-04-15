@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 
 # 載入 LLM 服務和工具模組
-from tools_tableau.llm_services import get_llm_client, AVAILABLE_MODELS, LLMClientInterface
+from core.llm_services import get_llm_client, AVAILABLE_MODELS, LLMClientInterface
 from tools_tableau import continuous_binning, boolean_tagging, order_combination, date_range, existence_check
 from tools_SQL import table_discover
 
@@ -11,7 +11,7 @@ from tools_SQL import table_discover
 load_dotenv()
 
 # --- 側邊欄 ---
-st.sidebar.title("🛠️ Tableau 小工具箱")
+st.sidebar.title("🛠️ Data 工具箱")
 
 # --- LLM 設定 ---
 # 過濾掉沒有設定 API Key 的提供者

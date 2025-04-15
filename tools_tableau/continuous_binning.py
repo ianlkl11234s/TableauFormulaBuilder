@@ -1,5 +1,5 @@
 import streamlit as st
-from .llm_services import LLMClientInterface # 引入通用介面
+from core.llm_services import LLMClientInterface
 
 def validate_group_logic(logic_str):
     """驗證分組邏輯的格式"""

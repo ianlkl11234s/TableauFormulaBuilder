@@ -1,5 +1,5 @@
 import streamlit as st
-from .llm_services import LLMClientInterface
+from core.llm_services import LLMClientInterface
 
 def generate_prompt(field_names, handle_null=True, prefix="", suffix="", has_negative=True, is_value=True, is_yn=False):
     """生成給 LLM 的提示"""
