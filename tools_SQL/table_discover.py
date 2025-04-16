@@ -323,6 +323,12 @@ def show(llm_client: LLMClientInterface, model_name: str):
     schema_name = st.text_input("輸入 Schema 名稱", value="", help="物件所在的 Schema 名稱，例如 public")
     object_name = st.text_input(f"輸入要探索的 {object_type} 名稱", help=f"請輸入 {schema_name} 中的 {object_type} 名稱，注意區分大小寫。")
 
+    # --- Exploration Options ---
+    st.markdown("---")
+    st.markdown("##### 探索選項")
+    # 新增 Checkbox 控制是否顯示關聯建議
+    show_relations = st.checkbox("顯示 AI 欄位關聯建議", value=True, help="勾選以使用 AI 分析欄位間可能的關聯性。")
+
     if st.button(f"🚀 開始探索 {object_type}", type="primary"):
         if not db_type: st.warning("請選擇資料庫類型。"); st.stop()
         if not schema_name: st.warning("請輸入 Schema 名稱。"); st.stop() # 檢查 Schema 名稱
@@ -331,7 +337,7 @@ def show(llm_client: LLMClientInterface, model_name: str):
         with st.spinner(f"正在連接 {db_type} 並讀取 {object_type} '{schema_name}.{object_name}' 資訊..."):
             # --- 1. 基礎資訊 & Schema ---
             st.markdown("---")
-            st.markdown(f"### 1. {object_type} 基礎資訊 & 欄位結構")
+            st.markdown(f"#### - {object_type} 基礎資訊 & 欄位結構")
 
             # 傳遞 schema_name
             row_count = get_object_row_count(db_type, schema_name, object_name, object_type)
@@ -368,23 +374,25 @@ def show(llm_client: LLMClientInterface, model_name: str):
             schema_df['通用類型'] = schema_df['data_type'].apply(map_data_type)
             st.dataframe(schema_df)
 
-            # --- LLM Relations Suggestion ---
-            st.markdown("---")
-            st.markdown("### 2. 欄位關聯性建議 (AI)")
-            with st.spinner("正在透過 AI 分析欄位間可能的關聯..."):
-                 if llm_client and model_name:
-                     try:
-                         relations_prompt = generate_relations_prompt(schema_df, object_type)
-                         relations_suggestion = llm_client.generate_text(relations_prompt, model_name, temperature=0.5)
-                         st.markdown(relations_suggestion)
-                     except Exception as e:
-                         st.error(f"分析欄位關聯性時發生錯誤: {e}")
-                 else:
-                     st.warning("LLM 服務未配置，無法進行欄位關聯建議。")
+            # --- 2. 欄位關聯性建議 (AI) ---
+            # 根據 Checkbox 狀態決定是否執行和顯示
+            if show_relations:
+                st.markdown("---")
+                st.markdown("#### - 欄位關聯性建議 (AI)")
+                with st.spinner("正在透過 AI 分析欄位間可能的關聯..."):
+                     if llm_client and model_name:
+                         try:
+                             relations_prompt = generate_relations_prompt(schema_df, object_type)
+                             relations_suggestion = llm_client.generate_text(relations_prompt, model_name, temperature=0.5)
+                             st.markdown(relations_suggestion)
+                         except Exception as e:
+                             st.error(f"分析欄位關聯性時發生錯誤: {e}")
+                     else:
+                         st.warning("LLM 服務未配置，無法進行欄位關聯建議。")
 
             # --- EDA Section ---
             st.markdown("---")
-            st.markdown("### 3. 欄位探索性分析 (EDA)")
+            st.markdown("#### - 欄位探索性分析 (EDA)")
             st.info("點擊展開各欄位查看詳細分析。")
 
             if not schema_df.empty:

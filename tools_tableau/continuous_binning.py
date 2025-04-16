@@ -38,6 +38,7 @@ def generate_prompt(field_name, group_logic, display_unit, has_null):
 
             顯示格式需求：
             - 每個分組前請加上序號（例如 "1. ...", "2. ..."）({ '有 NULL，但 NULL 不要加序號，且請命名為無＿＿資料'if has_null else '' })
+            - 分組請從大於零的數字開始編號，零或是無資料都要放在最後面且不需要編號
             - 分組區間請使用「起始 ~ 結束」的格式顯示（例：151 ~ 300）
             - 起始值請自動從上一個分組上限 +1 推算（第一組為最小值或特殊值）
             - 若有 <0、=0 等特殊條件，請獨立列出
@@ -57,7 +58,7 @@ def generate_prompt(field_name, group_logic, display_unit, has_null):
             分組：150, 300, 500, 1000, 2000
             顯示單位：元
 
-            結果：
+            參考語法：
             ------
             IF [客單價] <= 150 THEN
                 "1. ≤ 150 元"
@@ -69,8 +70,12 @@ def generate_prompt(field_name, group_logic, display_unit, has_null):
                 "4. 501 ~ 1000 元"
             ELSEIF [客單價] <= 2000 THEN
                 "5. 1001 ~ 2000 元"
-            ELSE
+            ELSEIF [客單價] > 2000 THEN
                 "6. ≥ 2001 元"
+            ELSEIF [客單價] = 0 THEN
+                "0 元"
+            ELSE
+                "無資料"
             END
             ------
 
@@ -101,7 +106,7 @@ def show(llm_client: LLMClientInterface, model_name: str):
 
     group_logic_input = st.text_input(
         "輸入分組邏輯",
-        value="null, <0, 0, 6, 13, 29, 59, 89",
+        value="6, 13, 29, 59, 89",
         help="請依序輸入分組的邊界值，用逗號分隔。格式：`null, <0, 數字1, 數字2, ...`。例如 `null, <0, 0, 6, 13, 29` 表示 `null`, `<0`, `=0`, `1-6`, `7-13`, `>=14`"
     )
 

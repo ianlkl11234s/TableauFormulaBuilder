@@ -5,7 +5,7 @@ import os
 # 載入 LLM 服務和工具模組
 from core.llm_services import get_llm_client, AVAILABLE_MODELS, LLMClientInterface
 from tools_tableau import continuous_binning, boolean_tagging, order_combination, date_range, existence_check
-from tools_SQL import table_discover
+from tools_SQL import table_discover, field_combination_count
 
 # 載入環境變數
 load_dotenv()
@@ -77,6 +77,10 @@ TOOLS_CONFIG = {
     "資料表探索 (SQL)": { # 新增 SQL 工具
         "function": table_discover.show,
         "requires_llm": True # 因為需要翻譯和關聯建議
+    },
+    "欄位組合計數 (SQL)": { # 新增這個工具
+        "function": field_combination_count.show,
+        "requires_llm": False # 這個工具不需要 LLM
     }
 }
 
