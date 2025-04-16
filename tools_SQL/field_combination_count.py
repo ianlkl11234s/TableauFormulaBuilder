@@ -197,13 +197,13 @@ def show():
                                 
                                 # 構建 SQL 查詢：使用美觀的格式
                                 sql_query = f"""SELECT 
-                                                    {select_clause}
-                                                FROM 
-                                                    {qualified_name}
-                                                GROUP BY 
-                                                    {group_by_clause}
-                                                ORDER BY 
-                                                    count DESC;"""
+    {select_clause}
+FROM 
+    {qualified_name}
+GROUP BY 
+    {group_by_clause}
+ORDER BY 
+count DESC;"""
 
                                 st.session_state.fc_sql_query = sql_query # 保存查詢語句供顯示
 
